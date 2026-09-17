@@ -1,0 +1,210 @@
+openapi: 3.0.3
+info:
+  title: Booking API
+  version: 1.0.0
+  description: Generic API for reservations and availability.
+servers:
+- url: https://api.example.com/booking
+paths:
+  /reservations:
+    get:
+      tags:
+      - Booking
+      summary: List reservations
+      operationId: listReservations
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reservation'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                - items
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+      - Booking
+      summary: Create Reservation
+      operationId: createReservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /reservations/{reservationId}:
+    get:
+      tags:
+      - Booking
+      summary: Get Reservation by reservationId
+      operationId: getReservation
+      parameters:
+      - name: reservationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Booking
+      summary: Update Reservation
+      operationId: updateReservation
+      parameters:
+      - name: reservationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Booking
+      summary: Delete Reservation
+      operationId: deleteReservation
+      parameters:
+      - name: reservationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        details:
+          type: object
+          additionalProperties: true
+        requestId:
+          type: string
+      required:
+      - code
+      - message
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        resourceId: &id001
+          type: string
+        startsAt: &id002
+          type: string
+          format: date-time
+        endsAt: &id003
+          type: string
+          format: date-time
+        status: &id004
+          type: string
+          enum:
+          - tentative
+          - confirmed
+          - cancelled
+      required:
+      - id
+      - resourceId
+      - startsAt
+      - endsAt
+      - status
+    ReservationCreate:
+      type: object
+      properties:
+        resourceId: *id001
+        startsAt: *id002
+        endsAt: *id003
+        status: *id004
+      required:
+      - resourceId
+      - startsAt
+      - endsAt
+      - status
+    ReservationUpdate:
+      type: object
+      properties:
+        resourceId: *id001
+        startsAt: *id002
+        endsAt: *id003
+        status: *id004
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

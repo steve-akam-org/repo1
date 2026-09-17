@@ -1,0 +1,232 @@
+openapi: 3.0.3
+info:
+  title: File Storage API
+  version: 1.0.0
+  description: Generic API for uploading, listing, and downloading files.
+servers:
+- url: https://api.example.com/files
+paths:
+  /files:
+    get:
+      tags:
+      - Files
+      summary: List files
+      operationId: listFileObjects
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FileObject'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                - items
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+      - Files
+      summary: Create FileObject
+      operationId: createFileObject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileObjectCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileObject'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /files/{fileId}:
+    get:
+      tags:
+      - Files
+      summary: Get FileObject by fileId
+      operationId: getFileObject
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileObject'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Files
+      summary: Update FileObject
+      operationId: updateFileObject
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileObjectUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileObject'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Files
+      summary: Delete FileObject
+      operationId: deleteFileObject
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /files/{fileId}/download:
+    get:
+      tags:
+      - Files
+      summary: Download a file
+      operationId: downloadFile
+      parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        details:
+          type: object
+          additionalProperties: true
+        requestId:
+          type: string
+      required:
+      - code
+      - message
+    FileObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          minimum: 0
+        checksumSha256:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - filename
+      - contentType
+      - sizeBytes
+      - createdAt
+    FileObjectCreate:
+      type: object
+      properties:
+        filename: &id001
+          type: string
+        contentType: &id002
+          type: string
+        contentBase64: &id003
+          type: string
+          description: Base64-encoded content (generic placeholder).
+      required:
+      - filename
+      - contentType
+      - contentBase64
+    FileObjectUpdate:
+      type: object
+      properties:
+        filename: *id001
+        contentType: *id002
+        contentBase64: *id003
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

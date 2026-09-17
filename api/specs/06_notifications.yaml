@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: Notifications API
+  version: 1.0.0
+  description: Generic API for publishing notifications and managing subscriptions.
+servers:
+- url: https://api.example.com/notifications
+paths:
+  /notifications:
+    get:
+      tags:
+      - Notifications
+      summary: List notifications
+      operationId: listNotifications
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                - items
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+      - Notifications
+      summary: Create Notification
+      operationId: createNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /notifications/{notificationId}:
+    get:
+      tags:
+      - Notifications
+      summary: Get Notification by notificationId
+      operationId: getNotification
+      parameters:
+      - name: notificationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Notifications
+      summary: Update Notification
+      operationId: updateNotification
+      parameters:
+      - name: notificationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Notifications
+      summary: Delete Notification
+      operationId: deleteNotification
+      parameters:
+      - name: notificationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /subscriptions:
+    get:
+      tags:
+      - Notifications
+      summary: List subscriptions
+      operationId: listSubscriptions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subscription'
+    post:
+      tags:
+      - Notifications
+      summary: Create subscription
+      operationId: createSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        details:
+          type: object
+          additionalProperties: true
+        requestId:
+          type: string
+      required:
+      - code
+      - message
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type: &id001
+          type: string
+        title: &id002
+          type: string
+        body: &id003
+          type: string
+        recipient: &id004
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - type
+      - title
+      - body
+      - recipient
+      - createdAt
+    NotificationCreate:
+      type: object
+      properties:
+        type: *id001
+        title: *id002
+        body: *id003
+        recipient: *id004
+      required:
+      - type
+      - title
+      - body
+      - recipient
+    NotificationUpdate:
+      type: object
+      properties:
+        type: *id001
+        title: *id002
+        body: *id003
+        recipient: *id004
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        topic:
+          type: string
+        endpoint:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+      required:
+      - id
+      - topic
+      - endpoint
+      - enabled
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

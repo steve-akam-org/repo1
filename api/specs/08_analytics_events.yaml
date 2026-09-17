@@ -1,0 +1,207 @@
+openapi: 3.0.3
+info:
+  title: Analytics Events API
+  version: 1.0.0
+  description: Generic API for collecting and querying analytics events.
+servers:
+- url: https://api.example.com/analytics
+paths:
+  /events:
+    get:
+      tags:
+      - Analytics
+      summary: List events
+      operationId: listEvents
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                - items
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+      - Analytics
+      summary: Create Event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /events/{eventId}:
+    get:
+      tags:
+      - Analytics
+      summary: Get Event by eventId
+      operationId: getEvent
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Analytics
+      summary: Update Event
+      operationId: updateEvent
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Analytics
+      summary: Delete Event
+      operationId: deleteEvent
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        details:
+          type: object
+          additionalProperties: true
+        requestId:
+          type: string
+      required:
+      - code
+      - message
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        actorId:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - timestamp
+    EventCreate:
+      type: object
+      properties:
+        name: &id001
+          type: string
+        actorId: &id002
+          type: string
+        properties: &id003
+          type: object
+          additionalProperties: true
+        timestamp: &id004
+          type: string
+          format: date-time
+      required:
+      - name
+    EventUpdate:
+      type: object
+      properties:
+        name: *id001
+        actorId: *id002
+        properties: *id003
+        timestamp: *id004
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
